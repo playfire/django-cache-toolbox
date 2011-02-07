@@ -1,4 +1,0 @@
-django-cache-relation
-=====================
-
-FIXME
