@@ -88,10 +88,13 @@ def get_instance(model, instance_or_pk, duration=None):
     # Use the default manager so we are never filtered by a .get_query_set()
     instance = model._default_manager.get(pk=pk)
 
-    data = dict(
-        (x.attname, getattr(instance, x.attname)) for x in instance._meta.fields
-        if not x.primary_key
-    )
+    data = {}
+    for field in instance._meta.fields:
+        if field.primary_key:
+            continue
+
+        data[field.attname] = getattr(instance, field.attname)
+
     cache.set(key, data, duration)
 
     return instance
