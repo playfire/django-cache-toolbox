@@ -21,23 +21,23 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
 
     @property
     def get(self):
-        # Always use the cached "real" object if available
+        # Always use the cached "real" instance if available
         try:
             return getattr(self, descriptor.cache_name)
         except AttributeError:
             pass
 
-        # Lookup cached object
+        # Lookup cached instance
         try:
             return getattr(self, '_%s_cache' % related_name)
         except AttributeError:
             pass
 
-        obj = get_instance(rel.model, self.pk)
+        instance = get_instance(rel.model, self.pk)
 
-        setattr(self, '_%s_cache' % related_name, obj)
+        setattr(self, '_%s_cache' % related_name, instance)
 
-        return obj
+        return instance
     setattr(rel.parent_model, related_name, get)
 
     # Clearing cache
@@ -72,29 +72,29 @@ def get_instance(model, instance_or_pk, duration=None):
     if data is not None:
         try:
             # Try and construct instance from dictionary
-            obj = model(pk=pk, **data)
+            instance = model(pk=pk, **data)
 
             # Ensure instance knows that it already exists in the database,
             # otherwise we will fail any uniqueness checks when saving the
             # instance.
-            obj._state.adding = False
+            instance._state.adding = False
 
-            return obj
+            return instance
         except:
             # Error when deserialising - remove from the cache; we will
-            # fallback and return the underlying object
+            # fallback and return the underlying instance
             cache.delete(key)
 
     # Use the default manager so we are never filtered by a .get_query_set()
-    obj = model._default_manager.get(pk=pk)
+    instance = model._default_manager.get(pk=pk)
 
     data = dict(
-        (x.attname, getattr(obj, x.attname)) for x in obj._meta.fields
+        (x.attname, getattr(instance, x.attname)) for x in instance._meta.fields
         if not x.primary_key
     )
     cache.set(key, data, duration)
 
-    return obj
+    return instance
 
 def delete_instance(model, *instance_or_pk):
     cache.delete_many([_cache_key(model, x) for x in instance_or_pk])
