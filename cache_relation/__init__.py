@@ -72,7 +72,14 @@ def get_instance(model, instance_or_pk, duration=None):
     if data is not None:
         try:
             # Try and construct instance from dictionary
-            return model(pk=pk, **data)
+            obj = model(pk=pk, **data)
+
+            # Ensure instance knows that it already exists in the database,
+            # otherwise we will fail any uniqueness checks when saving the
+            # instance.
+            obj._state.adding = False
+
+            return obj
         except:
             # Error when deserialising - remove from the cache; we will
             # fallback and return the underlying object
