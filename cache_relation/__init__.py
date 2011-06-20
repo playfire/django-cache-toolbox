@@ -95,6 +95,10 @@ def get_instance(model, instance_or_pk, duration=None):
         if field.primary_key:
             continue
 
+        if field.get_internal_type() == 'FileField':
+            # Prevent problems with DNImageField by not serialising it.
+            continue
+
         data[field.attname] = getattr(instance, field.attname)
 
     cache.set(key, data, duration)
