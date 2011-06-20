@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 
 def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
     """
@@ -56,6 +56,27 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
     setattr(rel.parent_model, '%s_clear' % related_name, clear)
     setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
     post_save.connect(on_post_save, sender=rel.model, weak=False)
+
+class cache_instances(object):
+    def __init__(self, duration=60 * 60 * 24 * 3):
+        self.duration = duration
+
+    def __call__(self, cls):
+        def clear_cache(sender, instance, *args, **kwargs):
+            delete_instance(sender, instance)
+
+        post_save.connect(clear_cache, sender=cls, weak=False)
+        post_delete.connect(clear_cache, sender=cls, weak=False)
+
+        @classmethod
+        def get(cls, pk):
+            if pk is None:
+                return None
+            return get_instance(cls, pk)
+
+        cls.get_cached = get
+
+        return cls
 
 def _cache_key(model, instance_or_pk):
     return '%s.%s:%d' % (
