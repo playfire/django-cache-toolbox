@@ -72,7 +72,7 @@ class cache_instances(object):
         def get(cls, pk):
             if pk is None:
                 return None
-            return get_instance(cls, pk)
+            return get_instance(cls, pk, self.duration)
 
         cls.get_cached = get
 
