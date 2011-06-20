@@ -82,7 +82,7 @@ def get_instance(model, instance_or_pk, duration=None):
     obj = model._default_manager.get(pk=pk)
 
     data = dict(
-        (x.name, getattr(obj, x.attname)) for x in obj._meta.fields
+        (x.attname, getattr(obj, x.attname)) for x in obj._meta.fields
         if not x.primary_key
     )
     cache.set(key, data, duration)
