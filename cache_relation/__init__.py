@@ -90,6 +90,8 @@ def get_instance(model, instance_or_pk, duration=None):
 
     data = {}
     for field in instance._meta.fields:
+        # Harmless to save, but saves space in the dictionary - we already know
+        # the primary key when we lookup
         if field.primary_key:
             continue
 
