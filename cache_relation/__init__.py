@@ -78,7 +78,8 @@ def get_instance(model, instance_or_pk, duration=None):
             # fallback and return the underlying object
             cache.delete(key)
 
-    obj = model.objects.get(pk=pk)
+    # Use the default manager so we are never filtered by a .get_query_set()
+    obj = model._default_manager.get(pk=pk)
 
     data = dict(
         (x.name, getattr(obj, x.attname)) for x in obj._meta.fields
