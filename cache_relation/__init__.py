@@ -19,13 +19,6 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
     rel = descriptor.related
     related_name = '%s_cache' % rel.field.related_query_name()
 
-    def get_cache_key(instance_or_pk):
-        return '%s.%s:%s' % (
-            rel.model._meta.app_label,
-            rel.model._meta.module_name,
-            getattr(instance_or_pk, 'pk', instance_or_pk),
-        )
-
     @property
     def get(self):
         # Always use the cached "real" object if available
@@ -40,28 +33,7 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
         except AttributeError:
             pass
 
-        cache_key = get_cache_key(self)
-
-        obj = None
-        data = cache.get(cache_key)
-
-        if data:
-            try:
-                # Try and construct instance from dictionary
-                obj = rel.model(pk=self.pk, **data)
-            except:
-                # Error when deserialising - remove from the cache; we will
-                # fallback and return the underlying object
-                cache.delete(cache_key)
-
-        if obj is None:
-            obj = getattr(self, rel.field.related_query_name())
-
-            data = dict(
-                (x.name, getattr(obj, x.attname)) for x in obj._meta.fields
-                if not x.primary_key
-            )
-            cache.set(cache_key, data, duration)
+        obj = get_instance(rel.model, self.pk)
 
         setattr(self, '_%s_cache' % related_name, obj)
 
@@ -71,16 +43,50 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
     # Clearing cache
 
     def clear(self):
-        cache.delete(get_cache_key(self))
+        delete_instance(rel.model, self)
 
     @classmethod
     def clear_pk(cls, *instances_or_pk):
-        cache.delete_many([get_cache_key(x) for x in instances_or_pk])
+        delete_instance(rel.model, *instances_or_pk)
 
     def on_post_save(sender, instance, created, *args, **kwargs):
-        cache.delete(get_cache_key(instance))
+        delete_instance(rel.model, instance)
 
     setattr(rel.model, '%s_clear' % related_name, clear)
     setattr(rel.parent_model, '%s_clear' % related_name, clear)
     setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
     post_save.connect(on_post_save, sender=rel.model, weak=False)
+
+def _cache_key(model, instance_or_pk):
+    return '%s.%s:%d' % (
+        model._meta.app_label,
+        model._meta.module_name,
+        getattr(instance_or_pk, 'pk', instance_or_pk),
+    )
+
+def get_instance(model, instance_or_pk, duration=None):
+    pk = getattr(instance_or_pk, 'pk', instance_or_pk)
+    key = _cache_key(model, instance_or_pk)
+    data = cache.get(key)
+
+    if data is not None:
+        try:
+            # Try and construct instance from dictionary
+            return model(pk=pk, **data)
+        except:
+            # Error when deserialising - remove from the cache; we will
+            # fallback and return the underlying object
+            cache.delete(key)
+
+    obj = model.objects.get(pk=pk)
+
+    data = dict(
+        (x.name, getattr(obj, x.attname)) for x in obj._meta.fields
+        if not x.primary_key
+    )
+    cache.set(key, data, duration)
+
+    return obj
+
+def delete_instance(model, *instance_or_pk):
+    cache.delete_many([_cache_key(model, x) for x in instance_or_pk])
