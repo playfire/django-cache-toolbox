@@ -1,12 +1,6 @@
 from django.core.cache import cache
 from django.db.models.signals import post_save
 
-def dict_from_instance(obj):
-    return dict(
-        (x.name, getattr(obj, x.attname)) for x in obj._meta.fields
-        if not x.primary_key
-    )
-
 def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
     """
     Usage::
