@@ -1,5 +1,7 @@
 from django.core.cache import cache
 
+from . import app_settings
+
 def cache_key(model, instance_or_pk):
     return '%s.%s:%d' % (
         model._meta.app_label,
@@ -43,6 +45,9 @@ def get_instance(model, instance_or_pk, duration=None):
             continue
 
         data[field.attname] = getattr(instance, field.attname)
+
+    if duration is None:
+        duration = app_settings.CACHE_RELATION_DEFAULT_DURATION
 
     cache.set(key, data, duration)
 
