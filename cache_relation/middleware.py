@@ -2,7 +2,7 @@ from django.contrib.auth import SESSION_KEY
 from django.contrib.auth.models import User
 from django.contrib.auth.middleware import AuthenticationMiddleware
 
-from .models import cache_model
+from .model import cache_model
 
 class CacheBackedAuthenticationMiddleware(AuthenticationMiddleware):
     def __init__(self):
