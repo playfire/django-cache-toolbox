@@ -2,7 +2,7 @@ from django.core.cache import cache
 
 from . import app_settings
 
-def cache_key(model, instance_or_pk):
+def instance_key(model, instance_or_pk):
     return '%s.%s:%d' % (
         model._meta.app_label,
         model._meta.module_name,
@@ -11,7 +11,7 @@ def cache_key(model, instance_or_pk):
 
 def get_instance(model, instance_or_pk, timeout=None):
     pk = getattr(instance_or_pk, 'pk', instance_or_pk)
-    key = cache_key(model, instance_or_pk)
+    key = instance_key(model, instance_or_pk)
     data = cache.get(key)
 
     if data is not None:
@@ -54,4 +54,4 @@ def get_instance(model, instance_or_pk, timeout=None):
     return instance
 
 def delete_instance(model, *instance_or_pk):
-    cache.delete_many([cache_key(model, x) for x in instance_or_pk])
+    cache.delete_many([instance_key(model, x) for x in instance_or_pk])
