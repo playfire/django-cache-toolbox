@@ -1,6 +1,6 @@
 """
-``cache_relation``
-------------------
+Caching instances via ``related_name``
+--------------------------------------
 
 ``cache_relation`` adds utility methods to a model to obtain ``related_name``
 instances via the cache.
