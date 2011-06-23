@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 
 from .core import get_instance, delete_instance
 
@@ -50,10 +50,12 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
     def clear_pk(cls, *instances_or_pk):
         delete_instance(rel.model, *instances_or_pk)
 
-    def on_post_save(sender, instance, created, *args, **kwargs):
+    def clear_cache(sender, instance, *args, **kwargs):
         delete_instance(rel.model, instance)
 
     setattr(rel.model, '%s_clear' % related_name, clear)
     setattr(rel.parent_model, '%s_clear' % related_name, clear)
     setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
-    post_save.connect(on_post_save, sender=rel.model, weak=False)
+
+    post_save.connect(clear_cache, sender=rel.model, weak=False)
+    post_delete.connect(clear_cache, sender=rel.model, weak=False)
