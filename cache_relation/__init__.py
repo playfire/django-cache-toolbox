@@ -62,21 +62,28 @@ class cache_instances(object):
         self.duration = duration
 
     def __call__(self, cls):
-        def clear_cache(sender, instance, *args, **kwargs):
-            delete_instance(sender, instance)
-
-        post_save.connect(clear_cache, sender=cls, weak=False)
-        post_delete.connect(clear_cache, sender=cls, weak=False)
-
-        @classmethod
-        def get(cls, pk):
-            if pk is None:
-                return None
-            return get_instance(cls, pk, self.duration)
-
-        cls.get_cached = get
+        clear_cache_on_save(cls, self.duration)
 
         return cls
+
+def clear_cache_on_save(model, duration):
+    if hasattr(model, 'get_cached'):
+        # Already patched
+        return
+
+    def clear_cache(sender, instance, *args, **kwargs):
+        delete_instance(sender, instance)
+
+    post_save.connect(clear_cache, sender=model, weak=False)
+    post_delete.connect(clear_cache, sender=model, weak=False)
+
+    @classmethod
+    def get(cls, pk):
+        if pk is None:
+            return None
+        return get_instance(cls, pk, duration)
+
+    model.get_cached = get
 
 def _cache_key(model, instance_or_pk):
     return '%s.%s:%d' % (
