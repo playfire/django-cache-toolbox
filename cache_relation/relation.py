@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, post_delete
 
 from .core import get_instance, delete_instance
 
-def cache_relation(descriptor, duration=None):
+def cache_relation(descriptor, timeout=None):
     """
     Usage::
 
@@ -34,7 +34,7 @@ def cache_relation(descriptor, duration=None):
         except AttributeError:
             pass
 
-        instance = get_instance(rel.model, self.pk, duration)
+        instance = get_instance(rel.model, self.pk, timeout)
 
         setattr(self, '_%s_cache' % related_name, instance)
 

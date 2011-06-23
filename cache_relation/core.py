@@ -9,7 +9,7 @@ def cache_key(model, instance_or_pk):
         getattr(instance_or_pk, 'pk', instance_or_pk),
     )
 
-def get_instance(model, instance_or_pk, duration=None):
+def get_instance(model, instance_or_pk, timeout=None):
     pk = getattr(instance_or_pk, 'pk', instance_or_pk)
     key = cache_key(model, instance_or_pk)
     data = cache.get(key)
@@ -46,10 +46,10 @@ def get_instance(model, instance_or_pk, duration=None):
 
         data[field.attname] = getattr(instance, field.attname)
 
-    if duration is None:
-        duration = app_settings.CACHE_RELATION_DEFAULT_DURATION
+    if timeout is None:
+        timeout = app_settings.CACHE_RELATION_DEFAULT_TIMEOUT
 
-    cache.set(key, data, duration)
+    cache.set(key, data, timeout)
 
     return instance
 
