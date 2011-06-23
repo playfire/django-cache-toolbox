@@ -1,15 +1,37 @@
+"""
+Core methods
+------------
+
+.. autofunction:: cache_relation.core.get_instance
+.. autofunction:: cache_relation.core.delete_instance
+.. autofunction:: cache_relation.core.instance_key
+
+"""
+
 from django.core.cache import cache
 
 from . import app_settings
 
-def instance_key(model, instance_or_pk):
-    return '%s.%s:%d' % (
-        model._meta.app_label,
-        model._meta.module_name,
-        getattr(instance_or_pk, 'pk', instance_or_pk),
-    )
-
 def get_instance(model, instance_or_pk, timeout=None):
+    """
+    Returns the ``model`` instance with a primary key of ``instance_or_pk``.
+
+    If the data is cached it will be returned from there, otherwise the regular
+    Django ORM is queried for this instance and the data stored in the cache.
+
+    If omitted, the timeout value defaults to
+    ``settings.CACHE_RELATION_DEFAULT_TIMEOUT`` instead of 0 (zero).
+
+    Example::
+
+        >>> get_instance(User, 1) # Cache miss
+        <User: lamby>
+        >>> get_instance(User, 1) # Cache hit
+        <User: lamby>
+        >>> User.objects.get(pk=1) == get_instance(User, 1)
+        True
+    """
+
     pk = getattr(instance_or_pk, 'pk', instance_or_pk)
     key = instance_key(model, instance_or_pk)
     data = cache.get(key)
@@ -54,4 +76,19 @@ def get_instance(model, instance_or_pk, timeout=None):
     return instance
 
 def delete_instance(model, *instance_or_pk):
+    """
+    Purges the cache keys for the instances of this model.
+    """
+
     cache.delete_many([instance_key(model, x) for x in instance_or_pk])
+
+def instance_key(model, instance_or_pk):
+    """
+    Returns the cache key for this (model, instance) pair.
+    """
+
+    return '%s.%s:%d' % (
+        model._meta.app_label,
+        model._meta.module_name,
+        getattr(instance_or_pk, 'pk', instance_or_pk),
+    )
