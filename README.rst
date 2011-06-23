@@ -1,4 +1,4 @@
-django-pedantic-http-methods
+django-cache-toolbox
 ============================
 
-Documentation: http://code.playfire.com/django-pedantic-http-methods/
+Documentation: http://code.playfire.com/django-cache-toolbox/
