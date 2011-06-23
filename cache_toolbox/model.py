@@ -1,6 +1,6 @@
 """
 ``cache_model``
-------------------
+---------------
 
 ``cache_model`` adds utility methods to a model to obtain ``ForeignKey``
 instances via the cache.

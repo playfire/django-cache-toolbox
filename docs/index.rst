@@ -1,5 +1,5 @@
-.. automodule:: cache_relation
-.. automodule:: cache_relation.core
-.. automodule:: cache_relation.model
-.. automodule:: cache_relation.relation
-.. automodule:: cache_relation.middleware
+.. automodule:: cache_toolbox
+.. automodule:: cache_toolbox.core
+.. automodule:: cache_toolbox.model
+.. automodule:: cache_toolbox.relation
+.. automodule:: cache_toolbox.middleware

@@ -13,7 +13,7 @@ every page to render "Logged in as 'X'" text as well to evaluate the result of
 functionality.
 
 This middleware eliminates the cost of retrieving this ``User`` instance by
-caching it using the ``cache_relation`` instance caching mechanisms.
+caching it using the ``cache_toolbox`` instance caching mechanisms.
 
 Depending on your average number of queries per page, saving one query per
 request can---in aggregate---reduce load on your database. In addition,
@@ -67,7 +67,7 @@ with::
 
     MIDDLEWARE_CLASSES = [
         ...
-        cache_relation.middleware.CacheBackedAuthenticationMiddleware,
+        cache_toolbox.middleware.CacheBackedAuthenticationMiddleware,
         ...
     ]
 

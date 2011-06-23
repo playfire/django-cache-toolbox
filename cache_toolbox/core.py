@@ -2,9 +2,9 @@
 Core methods
 ------------
 
-.. autofunction:: cache_relation.core.get_instance
-.. autofunction:: cache_relation.core.delete_instance
-.. autofunction:: cache_relation.core.instance_key
+.. autofunction:: cache_toolbox.core.get_instance
+.. autofunction:: cache_toolbox.core.delete_instance
+.. autofunction:: cache_toolbox.core.instance_key
 
 """
 
@@ -20,7 +20,7 @@ def get_instance(model, instance_or_pk, timeout=None):
     Django ORM is queried for this instance and the data stored in the cache.
 
     If omitted, the timeout value defaults to
-    ``settings.CACHE_RELATION_DEFAULT_TIMEOUT`` instead of 0 (zero).
+    ``settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT`` instead of 0 (zero).
 
     Example::
 
@@ -69,7 +69,7 @@ def get_instance(model, instance_or_pk, timeout=None):
         data[field.attname] = getattr(instance, field.attname)
 
     if timeout is None:
-        timeout = app_settings.CACHE_RELATION_DEFAULT_TIMEOUT
+        timeout = app_settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT
 
     cache.set(key, data, timeout)
 

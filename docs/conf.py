@@ -1,4 +1,4 @@
-project = 'django-cache-relation'
+project = 'django-cache-toolbox'
 version = ''
 release = ''
 copyright = '2010, 2011 UUMC Ltd.'
