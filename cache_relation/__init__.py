@@ -57,16 +57,7 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
     setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
     post_save.connect(on_post_save, sender=rel.model, weak=False)
 
-class cache_instances(object):
-    def __init__(self, duration=60 * 60 * 24 * 3):
-        self.duration = duration
-
-    def __call__(self, cls):
-        clear_cache_on_save(cls, self.duration)
-
-        return cls
-
-def clear_cache_on_save(model, duration):
+def cache_model(model, duration=60 * 60 * 24 * 3):
     if hasattr(model, 'get_cached'):
         # Already patched
         return
