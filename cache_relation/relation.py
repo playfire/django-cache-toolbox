@@ -34,7 +34,7 @@ def cache_relation(descriptor, duration=60 * 60 * 24 * 3):
         except AttributeError:
             pass
 
-        instance = get_instance(rel.model, self.pk)
+        instance = get_instance(rel.model, self.pk, duration)
 
         setattr(self, '_%s_cache' % related_name, instance)
 
