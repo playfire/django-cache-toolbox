@@ -53,7 +53,6 @@ def cache_relation(descriptor, timeout=None):
     def clear_cache(sender, instance, *args, **kwargs):
         delete_instance(rel.model, instance)
 
-    setattr(rel.model, '%s_clear' % related_name, clear)
     setattr(rel.parent_model, '%s_clear' % related_name, clear)
     setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
 
