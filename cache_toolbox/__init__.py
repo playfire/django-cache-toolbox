@@ -1,6 +1,6 @@
 """
-:mod:`cache_toolbox` --- Toolbox of caching tools for Django
-=============================================================
+:mod:`cache_toolbox` --- Non-magical object caching tools for Django
+====================================================================
 
 Introduction
 ------------
