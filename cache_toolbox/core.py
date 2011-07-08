@@ -9,6 +9,7 @@ Core methods
 """
 
 from django.core.cache import cache
+from django.db import DEFAULT_DB_ALIAS
 
 from . import app_settings
 
@@ -45,6 +46,10 @@ def get_instance(model, instance_or_pk, timeout=None):
             # otherwise we will fail any uniqueness checks when saving the
             # instance.
             instance._state.adding = False
+
+            # Specify database so that instance is setup correctly. We don't
+            # namespace cached objects by their origin database, however.
+            instance._state.db = DEFAULT_DB_ALIAS
 
             return instance
         except:
