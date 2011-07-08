@@ -70,9 +70,9 @@ def cache_model(model, timeout=None):
     post_delete.connect(clear_cache, sender=model, weak=False)
 
     @classmethod
-    def get(cls, pk):
+    def get(cls, pk, using=None):
         if pk is None:
             return None
-        return get_instance(cls, pk, timeout)
+        return get_instance(cls, pk, timeout, using)
 
     model.get_cached = get

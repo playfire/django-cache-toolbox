@@ -13,7 +13,7 @@ from django.db import DEFAULT_DB_ALIAS
 
 from . import app_settings
 
-def get_instance(model, instance_or_pk, timeout=None):
+def get_instance(model, instance_or_pk, timeout=None, using=None):
     """
     Returns the ``model`` instance with a primary key of ``instance_or_pk``.
 
@@ -49,7 +49,7 @@ def get_instance(model, instance_or_pk, timeout=None):
 
             # Specify database so that instance is setup correctly. We don't
             # namespace cached objects by their origin database, however.
-            instance._state.db = DEFAULT_DB_ALIAS
+            instance._state.db = using or DEFAULT_DB_ALIAS
 
             return instance
         except:
@@ -58,7 +58,7 @@ def get_instance(model, instance_or_pk, timeout=None):
             cache.delete(key)
 
     # Use the default manager so we are never filtered by a .get_query_set()
-    instance = model._default_manager.get(pk=pk)
+    instance = model._default_manager.using(using).get(pk=pk)
 
     data = {}
     for field in instance._meta.fields:
