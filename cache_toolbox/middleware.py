@@ -59,7 +59,7 @@ To use, find ``MIDDLEWARE_CLASSES`` in your ``settings.py`` and replace::
 
     MIDDLEWARE_CLASSES = [
         ...
-        django.contrib.auth.middleware.AuthenticationMiddleware,
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
         ...
     ]
 
@@ -67,7 +67,7 @@ with::
 
     MIDDLEWARE_CLASSES = [
         ...
-        cache_toolbox.middleware.CacheBackedAuthenticationMiddleware,
+        'cache_toolbox.middleware.CacheBackedAuthenticationMiddleware',
         ...
     ]
 
