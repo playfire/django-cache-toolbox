@@ -3,7 +3,7 @@ Cache-backed ``AuthenticationMiddleware``
 -----------------------------------------
 
 ``CacheBackedAuthenticationMiddleware`` is an
-``django.contrib.auth.middlewareo.AuthenticationMiddleware`` replacement to
+``django.contrib.auth.middleware.AuthenticationMiddleware`` replacement to
 avoid querying the database for a ``User`` instance in each request.
 
 Whilst the built-in ``AuthenticationMiddleware`` mechanism will only obtain the
