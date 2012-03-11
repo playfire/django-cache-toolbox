@@ -24,6 +24,8 @@ Usage
 
     cache_relation(User.foo)
 
+(``primary_key`` being ``True`` is currently required.)
+
 ::
 
     >>> user = User.objects.get(pk=1)
