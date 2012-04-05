@@ -4,5 +4,5 @@ from django.conf import settings
 CACHE_TOOLBOX_DEFAULT_TIMEOUT = getattr(
     settings,
     'CACHE_TOOLBOX_DEFAULT_TIMEOUT',
-    60 * 60 * 24 * 3,
+    60 * 60 * 24 * 7,
 )
