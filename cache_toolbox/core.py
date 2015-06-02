@@ -79,13 +79,8 @@ def get_instance(
         if field.primary_key:
             continue
 
-        if field.get_internal_type() == 'FileField':
-            # Avoid problems with serializing FileFields
-            # by only serializing the file name
-            file = getattr(instance, field.attname)
-            data[field.attname] = file.name
-        else:
-            data[field.attname] = getattr(instance, field.attname)
+        # Serialise the instance using the Field's own serialisation routines.
+        data[field.attname] = field.value_to_string(instance)
 
     if timeout is None:
         timeout = app_settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT
