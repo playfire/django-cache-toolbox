@@ -108,7 +108,7 @@ def cache_relation(descriptor, timeout=None, create=False, defaults=None):
         setattr(self, '_%s_cache' % related_name, instance)
 
         return instance
-    setattr(rel.parent_model, related_name, get)
+    setattr(rel.to, related_name, get)
 
     # Clearing cache
 
@@ -122,8 +122,8 @@ def cache_relation(descriptor, timeout=None, create=False, defaults=None):
     def clear_cache(sender, instance, *args, **kwargs):
         delete_instance(rel.model, instance)
 
-    setattr(rel.parent_model, '%s_clear' % related_name, clear)
-    setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
+    setattr(rel.to, '%s_clear' % related_name, clear)
+    setattr(rel.to, '%s_clear_pk' % related_name, clear_pk)
 
     post_save.connect(clear_cache, sender=rel.model, weak=False)
     post_delete.connect(clear_cache, sender=rel.model, weak=False)
