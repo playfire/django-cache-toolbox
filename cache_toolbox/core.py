@@ -79,8 +79,33 @@ def get_instance(
         if field.primary_key:
             continue
 
-        # Serialise the instance using the Field's own serialisation routines.
+        # By default, serialise the instance using the Field's own
+        # serialisation routines.
+        #
+        # It may seem odd to have a list of exceptions this way around, but
+        # this scheme allows custom fields to specify their own method of
+        # correctly serialising themselves: Field's cannot easily override
+        # value_from_object, but they can with value_to_string.
         data[field.attname] = field.value_to_string(instance)
+
+        # As special-cases:
+        if field.get_internal_type() in (
+            # Serialise the actual value at the field's attname for any relations.
+            # This is to avoid caching u"None" (the string) instead of None
+            # (ie.  NoneType) for nullable relations.
+            'AutoField',
+            'OneToOneField',
+
+            # Serialise datetimes and booleans directly, otherwise we
+            # incorrectly try to instantiate our instance with a string
+            # representation.
+            'BooleanField',
+            'NullBooleanField',
+            'TimeField',
+            'DateField',
+            'DateTimeField',
+        ):
+            data[field.attname] = field.value_from_object(instance)
 
     if timeout is None:
         timeout = app_settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT
