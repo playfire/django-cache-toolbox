@@ -25,7 +25,9 @@ class CachedGetTest(TestCase):
         self.assertEqual(Foo.get_cached(self.foo.pk).bar, 'quux')
 
     def test_cache_invalidated_on_delete(self):
-        self.foo.bar = 'quux'
+        pk = self.foo.pk
+
         self.foo.delete()
 
-        self._populate_cache()
+        with self.assertRaises(Foo.DoesNotExist):
+            Foo.get_cached(pk)
