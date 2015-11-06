@@ -5,7 +5,6 @@ from django.test import TestCase
 from .models import Foo, Bazz
 
 class CachedRelationTest(TestCase):
-    @skip("Currently broken")
     def test_cached_relation(self):
         foo = Foo.objects.create(bar='bees')
 
