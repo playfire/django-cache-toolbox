@@ -14,6 +14,8 @@ from django.db import DEFAULT_DB_ALIAS
 from . import app_settings
 
 
+CACHE_FORMAT_VERSION = 2
+
 def get_instance(
     model, instance_or_pk,
     timeout=None, using=None, create=False, defaults=None
@@ -134,7 +136,8 @@ def instance_key(model, instance_or_pk):
         # Django version <1.6
         model_name = model._meta.module_name
 
-    return '%s.%s:%d' % (
+    return 'cache.%d:%s.%s:%d' % (
+        CACHE_FORMAT_VERSION,
         model._meta.app_label,
         model_name,
         getattr(instance_or_pk, 'pk', instance_or_pk),
