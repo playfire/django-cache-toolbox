@@ -12,7 +12,7 @@ setup(
     author_email='tech@thread.com',
     license='BSD',
 
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests',)),
 
     install_requires=(
         "Django>=1.8",
