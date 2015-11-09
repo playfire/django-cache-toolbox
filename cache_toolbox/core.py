@@ -121,7 +121,7 @@ def instance_key(model, instance_or_pk):
         # Django version <1.6
         model_name = model._meta.module_name
 
-    return 'cache.%d:%s.%s:%d' % (
+    return 'cache.%d:%s.%s:%s' % (
         CACHE_FORMAT_VERSION,
         model._meta.app_label,
         model_name,
