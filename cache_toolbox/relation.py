@@ -102,7 +102,11 @@ def cache_relation(descriptor, timeout=None, create=False, defaults=None):
             pass
 
         instance = get_instance(
-            rel.field.model, self.pk, timeout, create=create, defaults=defaults
+            rel.field.model,
+            self.pk,
+            timeout,
+            create=create,
+            defaults=defaults
         )
 
         setattr(self, '_%s_cache' % related_name, instance)
