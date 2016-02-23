@@ -106,7 +106,8 @@ def cache_relation(descriptor, timeout=None, create=False, defaults=None):
             self.pk,
             timeout,
             create=create,
-            defaults=defaults
+            defaults=defaults,
+            using=self._state.db,
         )
 
         setattr(self, '_%s_cache' % related_name, instance)
