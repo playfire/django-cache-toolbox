@@ -115,15 +115,9 @@ def instance_key(model, instance_or_pk):
     Returns the cache key for this (model, instance) pair.
     """
 
-    try:
-        model_name = model._meta.model_name
-    except AttributeError:
-        # Django version <1.6
-        model_name = model._meta.module_name
-
     return 'cache.%d:%s.%s:%s' % (
         CACHE_FORMAT_VERSION,
         model._meta.app_label,
-        model_name,
+        model._meta.model_name
         getattr(instance_or_pk, 'pk', instance_or_pk),
     )
