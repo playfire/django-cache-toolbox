@@ -8,12 +8,23 @@ Core methods
 
 """
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 from django.core.cache import cache
 from django.db import DEFAULT_DB_ALIAS
 
 from . import app_settings
 
-def get_instance(model, instance_or_pk, timeout=None, using=None):
+
+CACHE_FORMAT_VERSION = 2
+
+def get_instance(
+    model, instance_or_pk,
+    timeout=None, using=None, create=False, defaults=None
+):
     """
     Returns the ``model`` instance with a primary key of ``instance_or_pk``.
 
@@ -22,6 +33,9 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
 
     If omitted, the timeout value defaults to
     ``settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT`` instead of 0 (zero).
+
+    If ``create`` is True, we are going to create the instance in case that it
+    was not found.
 
     Example::
 
@@ -40,7 +54,7 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
     if data is not None:
         try:
             # Try and construct instance from dictionary
-            instance = model(pk=pk, **data)
+            instance = model(pk=pk, **pickle.loads(data))
 
             # Ensure instance knows that it already exists in the database,
             # otherwise we will fail any uniqueness checks when saving the
@@ -58,7 +72,12 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
             cache.delete(key)
 
     # Use the default manager so we are never filtered by a .get_query_set()
-    instance = model._default_manager.using(using).get(pk=pk)
+    queryset = model._default_manager.using(using)
+    if create:
+        # It's possible that the related object didn't exist yet
+        instance, _ = queryset.get_or_create(pk=pk, defaults=defaults or {})
+    else:
+        instance = queryset.get(pk=pk)
 
     data = {}
     for field in instance._meta.fields:
@@ -67,15 +86,21 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
         if field.primary_key:
             continue
 
-        # Serialise the instance using the Field's own serialisation routines.
-        data[field.attname] = field.value_to_string(instance)
+        # We also don't want to save any virtual fields.
+        if not field.concrete:
+            continue
+
+        data[field.attname] = getattr(instance, field.attname)
 
     if timeout is None:
         timeout = app_settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT
 
-    cache.set(key, data, timeout)
+    # Encode through Pickle, since that allows overriding and covers (most)
+    # Python types we'd want to serialise.
+    cache.set(key, pickle.dumps(data, protocol=-1), timeout)
 
     return instance
+
 
 def delete_instance(model, *instance_or_pk):
     """
@@ -84,13 +109,21 @@ def delete_instance(model, *instance_or_pk):
 
     cache.delete_many([instance_key(model, x) for x in instance_or_pk])
 
+
 def instance_key(model, instance_or_pk):
     """
     Returns the cache key for this (model, instance) pair.
     """
 
-    return '%s.%s:%d' % (
+    try:
+        model_name = model._meta.model_name
+    except AttributeError:
+        # Django version <1.6
+        model_name = model._meta.module_name
+
+    return 'cache.%d:%s.%s:%s' % (
+        CACHE_FORMAT_VERSION,
         model._meta.app_label,
-        model._meta.model_name,
+        model_name,
         getattr(instance_or_pk, 'pk', instance_or_pk),
     )

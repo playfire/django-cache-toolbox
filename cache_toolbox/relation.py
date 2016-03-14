@@ -22,9 +22,15 @@ Usage
 
         name = models.CharField(max_length=20)
 
-    cache_relation(User.foo)
+    cache_relation(User.foo, create=True, defaults={})
 
 (``primary_key`` being ``True`` is currently required.)
+
+With ``create=True`` we force the creation of an instance of `Foo` in case that
+we are trying to access to user.foo_cache but ``user.foo`` doesn't exist yet.
+
+If ``create=True`` we are going to pass the default to the get_or_create
+function.
 
 ::
 
@@ -76,7 +82,8 @@ from django.db.models.signals import post_save, post_delete
 
 from .core import get_instance, delete_instance
 
-def cache_relation(descriptor, timeout=None):
+
+def cache_relation(descriptor, timeout=None, create=False, defaults=None):
     rel = descriptor.related
     related_name = '%s_cache' % rel.field.related_query_name()
 
@@ -94,12 +101,19 @@ def cache_relation(descriptor, timeout=None):
         except AttributeError:
             pass
 
-        instance = get_instance(rel.model, self.pk, timeout)
+        instance = get_instance(
+            rel.field.model,
+            self.pk,
+            timeout,
+            create=create,
+            defaults=defaults,
+            using=self._state.db,
+        )
 
         setattr(self, '_%s_cache' % related_name, instance)
 
         return instance
-    setattr(rel.parent_model, related_name, get)
+    setattr(rel.to, related_name, get)
 
     # Clearing cache
 
@@ -113,8 +127,8 @@ def cache_relation(descriptor, timeout=None):
     def clear_cache(sender, instance, *args, **kwargs):
         delete_instance(rel.model, instance)
 
-    setattr(rel.parent_model, '%s_clear' % related_name, clear)
-    setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
+    setattr(rel.to, '%s_clear' % related_name, clear)
+    setattr(rel.to, '%s_clear_pk' % related_name, clear_pk)
 
     post_save.connect(clear_cache, sender=rel.model, weak=False)
     post_delete.connect(clear_cache, sender=rel.model, weak=False)
