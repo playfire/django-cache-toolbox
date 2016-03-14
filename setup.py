@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 setup(
     name='django-cache-toolbox',
     description="Non-magical object caching for Django.",
-    version='0.1',
+    version='0.1.1',
     url='http://code.playfire.com/django-cache-toolbox',
 
     author='Playfire.com',
