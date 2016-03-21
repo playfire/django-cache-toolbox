@@ -6,10 +6,10 @@ setup(
     name='django-cache-toolbox',
     description="Non-magical object caching for Django.",
     version='0.2.2',
-    url='https://www.github.com/thread/django-cache-toolbox',
+    url='https://chris-lamb.co.uk/projects/django-cache-toolbox',
 
-    author='Thread.com',
-    author_email='tech@thread.com',
+    author='Chris Lamb',
+    author_email='chris@chris-lamb.co.uk',
     license='BSD',
 
     packages=find_packages(exclude=('tests',)),
