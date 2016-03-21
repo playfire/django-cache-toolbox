@@ -118,6 +118,6 @@ def instance_key(model, instance_or_pk):
     return 'cache.%d:%s.%s:%s' % (
         CACHE_FORMAT_VERSION,
         model._meta.app_label,
-        model._meta.model_name
+        model._meta.model_name,
         getattr(instance_or_pk, 'pk', instance_or_pk),
     )
