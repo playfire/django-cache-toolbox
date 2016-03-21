@@ -22,16 +22,9 @@ Usage
 
         name = models.CharField(max_length=20)
 
-    cache_relation(User.foo, create=True, defaults={})
+    cache_relation(User.foo)
 
 (``primary_key`` being ``True`` is currently required.)
-
-With ``create=True`` we force the creation of an instance of `Foo` in case that
-we are trying to access to user.foo_cache but ``user.foo`` doesn't exist yet.
-
-If ``create=True`` we are going to pass the default to the get_or_create
-function.
-
 ::
 
     >>> user = User.objects.get(pk=1)
@@ -83,7 +76,7 @@ from django.db.models.signals import post_save, post_delete
 from .core import get_instance, delete_instance
 
 
-def cache_relation(descriptor, timeout=None, create=False, defaults=None):
+def cache_relation(descriptor, timeout=None):
     rel = descriptor.related
     related_name = '%s_cache' % rel.field.related_query_name()
 
@@ -105,8 +98,6 @@ def cache_relation(descriptor, timeout=None, create=False, defaults=None):
             rel.field.model,
             self.pk,
             timeout,
-            create=create,
-            defaults=defaults,
             using=self._state.db,
         )
 
