@@ -17,6 +17,4 @@ setup(
     install_requires=(
         "Django>=1.8<2.0",
     ),
-
-    test_suite='tests',
 )
