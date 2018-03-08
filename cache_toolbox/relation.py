@@ -94,12 +94,20 @@ def cache_relation(descriptor, timeout=None):
         except AttributeError:
             pass
 
-        instance = get_instance(
-            rel.field.model,
-            self.pk,
-            timeout,
-            using=self._state.db,
-        )
+        try:
+            instance = get_instance(
+                rel.field.model,
+                self.pk,
+                timeout,
+                using=self._state.db,
+            )
+        except rel.related_model.DoesNotExist:
+            raise descriptor.RelatedObjectDoesNotExist(
+                "%s has no %s." % (
+                    rel.to.__name__,
+                    related_name,
+                ),
+            )
 
         setattr(self, '_%s_cache' % related_name, instance)
 
