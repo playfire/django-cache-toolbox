@@ -83,10 +83,8 @@ def cache_relation(descriptor, timeout=None):
     @property
     def get(self):
         # Always use the cached "real" instance if available
-        try:
-            return getattr(self, descriptor.cache_name)
-        except AttributeError:
-            pass
+        if descriptor.is_cached(self):
+            return descriptor.__get__(self)
 
         # Lookup cached instance
         try:

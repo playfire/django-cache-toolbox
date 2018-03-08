@@ -42,10 +42,20 @@ class CachedRelationTest(TestCase):
             "Foo should not have 'bazz_cache' attribute (empty cache)",
         )
 
+        self.assertFalse(
+            hasattr(foo, 'bazz_cache'),
+            "Foo should not have 'bazz_cache' attribute (warm cache; before natural access)",
+        )
+
         # sanity check
         self.assertFalse(
             hasattr(foo, 'bazz'),
             "Foo should not have 'bazz' attribute",
+        )
+
+        self.assertFalse(
+            hasattr(foo, 'bazz_cache'),
+            "Foo should not have 'bazz_cache' attribute (warm cache; after natural access)",
         )
 
     def test_cached_relation_not_present_exception(self):
