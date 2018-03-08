@@ -6,7 +6,11 @@ class Foo(models.Model):
     bar = models.TextField()
 
 class Bazz(models.Model):
-    foo = models.OneToOneField(Foo, related_name='bazz')
+    foo = models.OneToOneField(
+        Foo,
+        related_name='bazz',
+        on_delete=models.CASCADE,
+    )
 
     value = models.IntegerField(null=True)
 

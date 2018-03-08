@@ -15,7 +15,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
 
     install_requires=(
-        "Django>=1.8",
+        "Django>=1.8<2.0",
     ),
 
     test_suite='tests',
