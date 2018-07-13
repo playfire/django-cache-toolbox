@@ -1,8 +1,9 @@
-from django.test import TestCase
+from django.test import TransactionTestCase
 
 from .models import Foo
 
-class CachedGetTest(TestCase):
+# Use `TransactionTestCase` so that our `on_commit` actions happen when we expect.
+class CachedGetTest(TransactionTestCase):
     def setUp(self):
         self.foo = Foo.objects.create(bar='bees')
         self._populate_cache()

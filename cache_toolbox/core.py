@@ -14,7 +14,7 @@ except ImportError:
     import pickle
 
 from django.core.cache import cache
-from django.db import DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, transaction
 
 from . import app_settings
 
@@ -96,7 +96,26 @@ def delete_instance(model, *instance_or_pk):
     Purges the cache keys for the instances of this model.
     """
 
-    cache.delete_many([instance_key(model, x) for x in instance_or_pk])
+    # Only clear the cache when the current transaction commits.
+    # While clearing the cache earlier than that is valid, it is insufficient
+    # to ensure cache consistency. There is a possible race between two
+    # transactions as follows:
+    #
+    #   Transaction 1: modifies model (and thus clears cache)
+    #   Transaction 2: queries cache, which misses, so it populates the cache
+    #                  from the database, picking up the unmodified model
+    #   Transaction 1: commits, without further signal to the cache
+    #
+    # At this point the cache contains the _original_ value of the model, which
+    # is out of step with the database.
+    # To avoid this we delay clearing the cache until the transaction commits.
+    # While this does leave a small window after the transaction has committed
+    # but before the cache has cleared, that is better than leaving the cache
+    # incorrect until the model is next updated.
+
+    transaction.on_commit(lambda: cache.delete_many(
+        [instance_key(model, x) for x in instance_or_pk],
+    ))
 
 
 def instance_key(model, instance_or_pk):
