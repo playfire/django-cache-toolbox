@@ -36,7 +36,7 @@ cache_relation(Foo.bazz)
 foo = Foo.get_cached(pk=42)
 
 # Load a cached relation
-print(foo.bazz)
+print(foo.bazz_cache)
 ```
 
 See the module docstrings for further details.
