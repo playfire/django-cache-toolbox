@@ -15,6 +15,6 @@ setup(
     packages=find_packages(exclude=('tests',)),
 
     install_requires=(
-        "Django>=1.9,<2.2",
+        "Django>=1.9",
     ),
 )
