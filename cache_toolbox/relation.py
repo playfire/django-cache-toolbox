@@ -88,9 +88,20 @@ def cache_relation(descriptor, timeout=None):
 
         # Lookup cached instance
         try:
-            return getattr(self, '_%s_cache' % related_name)
+            instance = getattr(self, '_%s_cache' % related_name)
         except AttributeError:
+            # no local cache
             pass
+        else:
+            if instance is None:
+                # we (locally) cached that there is no model
+                raise descriptor.RelatedObjectDoesNotExist(
+                    "%s has no %s." % (
+                        rel.model.__name__,
+                        related_name,
+                    ),
+                )
+            return instance
 
         try:
             instance = get_instance(
@@ -100,14 +111,15 @@ def cache_relation(descriptor, timeout=None):
                 using=self._state.db,
             )
         except rel.related_model.DoesNotExist:
+            instance = None
             raise descriptor.RelatedObjectDoesNotExist(
                 "%s has no %s." % (
                     rel.model.__name__,
                     related_name,
                 ),
             )
-
-        setattr(self, '_%s_cache' % related_name, instance)
+        finally:
+            setattr(self, '_%s_cache' % related_name, instance)
 
         return instance
     setattr(rel.model, related_name, get)

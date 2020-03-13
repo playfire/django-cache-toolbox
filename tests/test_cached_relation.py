@@ -69,3 +69,41 @@ class CachedRelationTest(TestCase):
             AttributeError,
             "Raised error must also be an AttributeError (we're expecting a 'RelatedObjectDoesNotExist')",
         )
+
+    def test_cached_missing_relation_uses_select_related(self):
+        foo = Foo.objects.create(bar='bees')
+
+        with self.assertNumQueries(1):
+            foo = Foo.objects.select_related('bazz').get(pk=foo.pk)
+
+        with self.assertNumQueries(0):
+            with self.assertRaises(Bazz.DoesNotExist):
+                foo.bazz_cache
+
+    def test_cached_missing_relation_cached_locally(self):
+        # Django will cache on the instance that foo.bazz doesn't exist, just
+        # the same as it would cache the Bazz instance if there was one. Mimic
+        # that behaviour in order to have comparable querying behaviour.
+
+        foo = Foo.objects.create(bar='bees')
+
+        with self.assertNumQueries(1):
+            foo = Foo.objects.get(pk=foo.pk)
+
+        # Populate the (instance) cache
+        with self.assertNumQueries(1):
+            with self.assertRaises(Bazz.DoesNotExist):
+                foo.bazz_cache
+
+        # Get from the (instance) cache
+        with self.assertNumQueries(0):
+            with self.assertRaises(Bazz.DoesNotExist):
+                foo.bazz_cache
+
+        with self.assertNumQueries(1):
+            foo = Foo.objects.get(pk=foo.pk)
+
+        # Prove that we haven't put anything into the remote cache
+        with self.assertNumQueries(1):
+            with self.assertRaises(Bazz.DoesNotExist):
+                foo.bazz_cache
