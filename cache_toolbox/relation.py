@@ -110,16 +110,15 @@ def cache_relation(descriptor, timeout=None):
                 timeout,
                 using=self._state.db,
             )
+            setattr(self, '_%s_cache' % related_name, instance)
         except rel.related_model.DoesNotExist:
-            instance = None
+            setattr(self, '_%s_cache' % related_name, None)
             raise descriptor.RelatedObjectDoesNotExist(
                 "%s has no %s." % (
                     rel.model.__name__,
                     related_name,
                 ),
             )
-        finally:
-            setattr(self, '_%s_cache' % related_name, instance)
 
         return instance
     setattr(rel.model, related_name, get)

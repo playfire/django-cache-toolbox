@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.core.cache import cache
 from django.test import TestCase
 
@@ -107,3 +109,19 @@ class CachedRelationTest(TestCase):
         with self.assertNumQueries(1):
             with self.assertRaises(Bazz.DoesNotExist):
                 foo.bazz_cache
+
+    def test_get_instance_error_doesnt_have_side_effect_issues(self):
+        foo = Foo.objects.create(bar='bees')
+
+        class DummyException(Exception):
+            pass
+
+        # Validate that the underlying error is passed through, without any
+        # other errors happening...
+        with mock.patch('cache_toolbox.core.cache.get', side_effect=DummyException):
+            with self.assertRaises(DummyException):
+                foo.bazz_cache
+
+        # ... and that we haven't put anything bad in the cache along the way
+        bazz = Bazz.objects.create(foo=foo)
+        self.assertEqual(bazz, foo.bazz_cache)
