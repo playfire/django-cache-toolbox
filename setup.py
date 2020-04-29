@@ -12,7 +12,7 @@ setup(
     description="Non-magical object caching for Django.",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='1.2.0',
+    version='1.2.1',
     url='https://chris-lamb.co.uk/projects/django-cache-toolbox',
 
     author='Chris Lamb',
