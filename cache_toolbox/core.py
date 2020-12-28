@@ -22,12 +22,28 @@ from . import app_settings
 CACHE_FORMAT_VERSION = 2
 
 
+def setattrdefault(obj, name, default):
+    try:
+        return getattr(obj, name)
+    except AttributeError:
+        setattr(obj, name, default)
+        return default
+
+
 def get_related_name(descriptor):
     return '%s_cache' % descriptor.related.field.related_query_name()
 
 
 def get_related_cache_name(related_name: str) -> str:
     return '_%s_cache' % related_name
+
+
+def add_always_fetch_relation(descriptor):
+    setattrdefault(
+        descriptor.related.model,
+        '_cache_fetch_related',
+        [],
+    ).append(descriptor)
 
 
 def serialise(instance):
@@ -86,28 +102,75 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
     """
 
     pk = getattr(instance_or_pk, 'pk', instance_or_pk)
-    key = instance_key(model, instance_or_pk)
-    data = cache.get(key)
 
-    if data is not None:
+    primary_model = model
+    descriptors = getattr(primary_model, '_cache_fetch_related', ())
+    models = [model, *(d.related.field.model for d in descriptors)]
+    # Note: we're assuming that the relations are primary key foreign keys, and
+    # so all have the same primary key. This matches the assumption which
+    # `cache_relation` makes.
+    keys_to_models = {
+        instance_key(model, instance_or_pk): model
+        for model in models
+    }
+
+    data_map = cache.get_many(keys_to_models.keys())
+    instance_map = {}
+
+    if data_map:
         try:
-            return deserialise(model, data, pk, using)
+            for key, data in data_map.items():
+                model = keys_to_models[key]
+                instance_map[key] = deserialise(model, data, pk, using)
         except:
             # Error when deserialising - remove from the cache; we will
             # fallback and return the underlying instance
-            cache.delete(key)
+            cache.delete_many(keys_to_models.keys())
+
+        else:
+            key = instance_key(primary_model, instance_or_pk)
+            primary_instance = instance_map[key]
+
+            for descriptor in descriptors:
+                related_instance = instance_map.get(instance_key(
+                    descriptor.related.field.model,
+                    instance_or_pk,
+                ))
+                related_cache_name = get_related_cache_name(
+                    get_related_name(descriptor),
+                )
+                setattr(primary_instance, related_cache_name, related_instance)
+
+            return primary_instance
+
+    related_names = [d.related.field.related_query_name() for d in descriptors]
 
     # Use the default manager so we are never filtered by a .get_query_set()
-    instance = model._default_manager.using(using).get(pk=pk)
+    primary_instance = primary_model._default_manager.using(
+        using,
+    ).select_related(
+        *related_names,
+    ).get(pk=pk)
 
-    data = serialise(instance)
+    instances = [
+        primary_instance,
+        *(getattr(primary_instance, x, None) for x in related_names),
+    ]
+
+    cache_data = {}
+    for instance in instances:
+        if instance is None:
+            continue
+
+        key = instance_key(instance._meta.model, instance)
+        cache_data[key] = serialise(instance)
 
     if timeout is None:
         timeout = app_settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT
 
-    cache.set(key, data, timeout)
+    cache.set_many(cache_data, timeout)
 
-    return instance
+    return primary_instance
 
 
 def delete_instance(model, *instance_or_pk):

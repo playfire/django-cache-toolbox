@@ -78,16 +78,20 @@ from .core import (
     delete_instance,
     get_related_name,
     get_related_cache_name,
+    add_always_fetch_relation,
 )
 
 
-def cache_relation(descriptor, timeout=None):
+def cache_relation(descriptor, timeout=None, *, always_fetch=False):
     rel = descriptor.related
 
     if not rel.field.primary_key:
         # This is an internal limitation due to the way that we construct our
         # cache keys.
         raise ValueError("Cached relations must be the primary key")
+
+    if always_fetch:
+        add_always_fetch_relation(descriptor)
 
     related_name = get_related_name(descriptor)
 
