@@ -73,7 +73,12 @@ for regular ``ForeignKey`` fields is planned.
 
 from django.db.models.signals import post_save, post_delete
 
-from .core import get_instance, delete_instance
+from .core import (
+    get_instance,
+    delete_instance,
+    get_related_name,
+    get_related_cache_name,
+)
 
 
 def cache_relation(descriptor, timeout=None):
@@ -84,7 +89,7 @@ def cache_relation(descriptor, timeout=None):
         # cache keys.
         raise ValueError("Cached relations must be the primary key")
 
-    related_name = '%s_cache' % rel.field.related_query_name()
+    related_name = get_related_name(descriptor)
 
     @property
     def get(self):
@@ -93,8 +98,9 @@ def cache_relation(descriptor, timeout=None):
             return descriptor.__get__(self)
 
         # Lookup cached instance
+        related_cache_name = get_related_cache_name(related_name)
         try:
-            instance = getattr(self, '_%s_cache' % related_name)
+            instance = getattr(self, related_cache_name)
         except AttributeError:
             # no local cache
             pass
@@ -120,9 +126,9 @@ def cache_relation(descriptor, timeout=None):
                 timeout,
                 using=self._state.db,
             )
-            setattr(self, '_%s_cache' % related_name, instance)
+            setattr(self, related_cache_name, instance)
         except rel.related_model.DoesNotExist:
-            setattr(self, '_%s_cache' % related_name, None)
+            setattr(self, related_cache_name, None)
             raise descriptor.RelatedObjectDoesNotExist(
                 "%s has no %s." % (
                     rel.model.__name__,

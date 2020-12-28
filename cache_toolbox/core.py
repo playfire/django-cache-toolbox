@@ -22,6 +22,14 @@ from . import app_settings
 CACHE_FORMAT_VERSION = 2
 
 
+def get_related_name(descriptor):
+    return '%s_cache' % descriptor.related.field.related_query_name()
+
+
+def get_related_cache_name(related_name: str) -> str:
+    return '_%s_cache' % related_name
+
+
 def serialise(instance):
     data = {}
     for field in instance._meta.fields:
