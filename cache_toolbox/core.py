@@ -21,6 +21,42 @@ from . import app_settings
 
 CACHE_FORMAT_VERSION = 2
 
+
+def serialise(instance):
+    data = {}
+    for field in instance._meta.fields:
+        # Harmless to save, but saves space in the dictionary - we already know
+        # the primary key when we lookup
+        if field.primary_key:
+            continue
+
+        # We also don't want to save any virtual fields.
+        if not field.concrete:
+            continue
+
+        data[field.attname] = getattr(instance, field.attname)
+
+    # Encode through Pickle, since that allows overriding and covers (most)
+    # Python types we'd want to serialise.
+    return pickle.dumps(data, protocol=-1)
+
+
+def deserialise(model, data, pk, using):
+    # Try and construct instance from dictionary
+    instance = model(pk=pk, **pickle.loads(data))
+
+    # Ensure instance knows that it already exists in the database,
+    # otherwise we will fail any uniqueness checks when saving the
+    # instance.
+    instance._state.adding = False
+
+    # Specify database so that instance is setup correctly. We don't
+    # namespace cached objects by their origin database, however.
+    instance._state.db = using or DEFAULT_DB_ALIAS
+
+    return instance
+
+
 def get_instance(model, instance_or_pk, timeout=None, using=None):
     """
     Returns the ``model`` instance with a primary key of ``instance_or_pk``.
@@ -47,19 +83,7 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
 
     if data is not None:
         try:
-            # Try and construct instance from dictionary
-            instance = model(pk=pk, **pickle.loads(data))
-
-            # Ensure instance knows that it already exists in the database,
-            # otherwise we will fail any uniqueness checks when saving the
-            # instance.
-            instance._state.adding = False
-
-            # Specify database so that instance is setup correctly. We don't
-            # namespace cached objects by their origin database, however.
-            instance._state.db = using or DEFAULT_DB_ALIAS
-
-            return instance
+            return deserialise(model, data, pk, using)
         except:
             # Error when deserialising - remove from the cache; we will
             # fallback and return the underlying instance
@@ -68,25 +92,12 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
     # Use the default manager so we are never filtered by a .get_query_set()
     instance = model._default_manager.using(using).get(pk=pk)
 
-    data = {}
-    for field in instance._meta.fields:
-        # Harmless to save, but saves space in the dictionary - we already know
-        # the primary key when we lookup
-        if field.primary_key:
-            continue
-
-        # We also don't want to save any virtual fields.
-        if not field.concrete:
-            continue
-
-        data[field.attname] = getattr(instance, field.attname)
+    data = serialise(instance)
 
     if timeout is None:
         timeout = app_settings.CACHE_TOOLBOX_DEFAULT_TIMEOUT
 
-    # Encode through Pickle, since that allows overriding and covers (most)
-    # Python types we'd want to serialise.
-    cache.set(key, pickle.dumps(data, protocol=-1), timeout)
+    cache.set(key, data, timeout)
 
     return instance
 
