@@ -10,6 +10,7 @@ class Bazz(models.Model):
         Foo,
         related_name='bazz',
         on_delete=models.CASCADE,
+        primary_key=True,
     )
 
     value = models.IntegerField(null=True)

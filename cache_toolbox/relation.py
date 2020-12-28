@@ -78,6 +78,12 @@ from .core import get_instance, delete_instance
 
 def cache_relation(descriptor, timeout=None):
     rel = descriptor.related
+
+    if not rel.field.primary_key:
+        # This is an internal limitation due to the way that we construct our
+        # cache keys.
+        raise ValueError("Cached relations must be the primary key")
+
     related_name = '%s_cache' % rel.field.related_query_name()
 
     @property
@@ -106,6 +112,10 @@ def cache_relation(descriptor, timeout=None):
         try:
             instance = get_instance(
                 rel.field.model,
+                # Note that we're using _our_ primary key here, rather than the
+                # primary key of the model being cached. This is ok since we
+                # know that its primary key is a foreign key to this model
+                # instance and therefore has the same value.
                 self.pk,
                 timeout,
                 using=self._state.db,

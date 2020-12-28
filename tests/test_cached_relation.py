@@ -1,9 +1,19 @@
 from unittest import mock
 
+from cache_toolbox import cache_relation
+
 from django.core.cache import cache
+from django.db import models
 from django.test import TestCase
 
 from .models import Foo, Bazz
+
+class Another(models.Model):
+    foo = models.OneToOneField(
+        Foo,
+        related_name='another',
+        on_delete=models.CASCADE,
+    )
 
 class CachedRelationTest(TestCase):
     longMessage = True
@@ -12,6 +22,10 @@ class CachedRelationTest(TestCase):
         # Ensure we start with a clear cache for each test, i.e. tests can use
         # the cache hygenically
         cache.clear()
+
+    def test_requires_primary_key(self):
+        with self.assertRaises(ValueError):
+            cache_relation(Foo.another)
 
     def test_cached_relation(self):
         foo = Foo.objects.create(bar='bees')
