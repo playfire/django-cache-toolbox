@@ -23,7 +23,7 @@ class Foo(models.Model):
     ...
 
 class Bazz(models.Model):
-    foo = models.OneToOneField(Foo, related_name='bazz')
+    foo = models.OneToOneField(Foo, related_name='bazz', primary_key=True)
     ...
 
 # Prepare caching of a model
