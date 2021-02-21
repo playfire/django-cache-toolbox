@@ -8,12 +8,14 @@ from django.test import TestCase
 
 from .models import Foo, Bazz
 
+
 class Another(models.Model):
     foo = models.OneToOneField(
         Foo,
-        related_name='another',
+        related_name="another",
         on_delete=models.CASCADE,
     )
+
 
 class CachedRelationTest(TestCase):
     longMessage = True
@@ -28,7 +30,7 @@ class CachedRelationTest(TestCase):
             cache_relation(Foo.another)
 
     def test_cached_relation(self):
-        foo = Foo.objects.create(bar='bees')
+        foo = Foo.objects.create(bar="bees")
 
         Bazz.objects.create(foo=foo, value=10)
 
@@ -41,41 +43,41 @@ class CachedRelationTest(TestCase):
         self.assertEqual(cached_object.value, 10)
 
         self.assertTrue(
-            hasattr(foo, 'bazz'),
+            hasattr(foo, "bazz"),
             "Foo should have 'bazz' attribute",
         )
 
         self.assertTrue(
-            hasattr(foo, 'bazz_cache'),
+            hasattr(foo, "bazz_cache"),
             "Foo should have 'bazz_cache' attribute",
         )
 
     def test_cached_relation_not_present_hasattr(self):
-        foo = Foo.objects.create(bar='bees_2')
+        foo = Foo.objects.create(bar="bees_2")
 
         self.assertFalse(
-            hasattr(foo, 'bazz_cache'),
+            hasattr(foo, "bazz_cache"),
             "Foo should not have 'bazz_cache' attribute (empty cache)",
         )
 
         self.assertFalse(
-            hasattr(foo, 'bazz_cache'),
+            hasattr(foo, "bazz_cache"),
             "Foo should not have 'bazz_cache' attribute (warm cache; before natural access)",
         )
 
         # sanity check
         self.assertFalse(
-            hasattr(foo, 'bazz'),
+            hasattr(foo, "bazz"),
             "Foo should not have 'bazz' attribute",
         )
 
         self.assertFalse(
-            hasattr(foo, 'bazz_cache'),
+            hasattr(foo, "bazz_cache"),
             "Foo should not have 'bazz_cache' attribute (warm cache; after natural access)",
         )
 
     def test_cached_relation_not_present_exception(self):
-        foo = Foo.objects.create(bar='bees_3')
+        foo = Foo.objects.create(bar="bees_3")
 
         with self.assertRaises(Bazz.DoesNotExist) as cm:
             foo.bazz_cache
@@ -87,10 +89,10 @@ class CachedRelationTest(TestCase):
         )
 
     def test_cached_missing_relation_uses_select_related(self):
-        foo = Foo.objects.create(bar='bees')
+        foo = Foo.objects.create(bar="bees")
 
         with self.assertNumQueries(1):
-            foo = Foo.objects.select_related('bazz').get(pk=foo.pk)
+            foo = Foo.objects.select_related("bazz").get(pk=foo.pk)
 
         with self.assertNumQueries(0):
             with self.assertRaises(Bazz.DoesNotExist):
@@ -101,7 +103,7 @@ class CachedRelationTest(TestCase):
         # the same as it would cache the Bazz instance if there was one. Mimic
         # that behaviour in order to have comparable querying behaviour.
 
-        foo = Foo.objects.create(bar='bees')
+        foo = Foo.objects.create(bar="bees")
 
         with self.assertNumQueries(1):
             foo = Foo.objects.get(pk=foo.pk)
@@ -125,14 +127,14 @@ class CachedRelationTest(TestCase):
                 foo.bazz_cache
 
     def test_get_instance_error_doesnt_have_side_effect_issues(self):
-        foo = Foo.objects.create(bar='bees')
+        foo = Foo.objects.create(bar="bees")
 
         class DummyException(Exception):
             pass
 
         # Validate that the underlying error is passed through, without any
         # other errors happening...
-        with mock.patch('cache_toolbox.core.cache.get', side_effect=DummyException):
+        with mock.patch("cache_toolbox.core.cache.get", side_effect=DummyException):
             with self.assertRaises(DummyException):
                 foo.bazz_cache
 

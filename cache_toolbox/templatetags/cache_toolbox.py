@@ -4,6 +4,7 @@ from django.template import Node, TemplateSyntaxError, Variable
 
 register = template.Library()
 
+
 class CacheNode(Node):
     def __init__(self, nodelist, expire_time, key):
         self.nodelist = nodelist
@@ -20,6 +21,7 @@ class CacheNode(Node):
             cache.set(key, value, expire_time)
         return value
 
+
 @register.tag
 def cachedeterministic(parser, token):
     """
@@ -34,12 +36,13 @@ def cachedeterministic(parser, token):
         {% endcachedeterministic %}
 
     """
-    nodelist = parser.parse(('endcachedeterministic',))
+    nodelist = parser.parse(("endcachedeterministic",))
     parser.delete_first_token()
     tokens = token.contents.split()
     if len(tokens) != 3:
         raise TemplateSyntaxError(u"'%r' tag requires 2 arguments." % tokens[0])
     return CacheNode(nodelist, tokens[1], tokens[2])
+
 
 class ShowIfCachedNode(Node):
     def __init__(self, key):
@@ -47,7 +50,8 @@ class ShowIfCachedNode(Node):
 
     def render(self, context):
         key = self.key.resolve(context)
-        return cache.get(key) or ''
+        return cache.get(key) or ""
+
 
 @register.tag
 def showifcached(parser, token):

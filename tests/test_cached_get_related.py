@@ -7,7 +7,7 @@ from .models import AlwaysRelated, ToLoad
 # Use `TransactionTestCase` so that our `on_commit` actions happen when we expect.
 class CachedGetRelatedTest(TransactionTestCase):
     def setUp(self):
-        self.to_load = ToLoad.objects.create(name='bees')
+        self.to_load = ToLoad.objects.create(name="bees")
         self.always_related = AlwaysRelated.objects.create(to_load=self.to_load)
         self._populate_cache()
 

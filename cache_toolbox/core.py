@@ -31,17 +31,17 @@ def setattrdefault(obj, name, default):
 
 
 def get_related_name(descriptor):
-    return '%s_cache' % descriptor.related.field.related_query_name()
+    return "%s_cache" % descriptor.related.field.related_query_name()
 
 
 def get_related_cache_name(related_name: str) -> str:
-    return '_%s_cache' % related_name
+    return "_%s_cache" % related_name
 
 
 def add_always_fetch_relation(descriptor):
     setattrdefault(
         descriptor.related.model,
-        '_cache_fetch_related',
+        "_cache_fetch_related",
         [],
     ).append(descriptor)
 
@@ -101,18 +101,15 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
         True
     """
 
-    pk = getattr(instance_or_pk, 'pk', instance_or_pk)
+    pk = getattr(instance_or_pk, "pk", instance_or_pk)
 
     primary_model = model
-    descriptors = getattr(primary_model, '_cache_fetch_related', ())
+    descriptors = getattr(primary_model, "_cache_fetch_related", ())
     models = [model, *(d.related.field.model for d in descriptors)]
     # Note: we're assuming that the relations are primary key foreign keys, and
     # so all have the same primary key. This matches the assumption which
     # `cache_relation` makes.
-    keys_to_models = {
-        instance_key(model, instance_or_pk): model
-        for model in models
-    }
+    keys_to_models = {instance_key(model, instance_or_pk): model for model in models}
 
     data_map = cache.get_many(keys_to_models.keys())
     instance_map = {}
@@ -132,10 +129,12 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
             primary_instance = instance_map[key]
 
             for descriptor in descriptors:
-                related_instance = instance_map.get(instance_key(
-                    descriptor.related.field.model,
-                    instance_or_pk,
-                ))
+                related_instance = instance_map.get(
+                    instance_key(
+                        descriptor.related.field.model,
+                        instance_or_pk,
+                    )
+                )
                 related_cache_name = get_related_cache_name(
                     get_related_name(descriptor),
                 )
@@ -146,11 +145,15 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
     related_names = [d.related.field.related_query_name() for d in descriptors]
 
     # Use the default manager so we are never filtered by a .get_query_set()
-    primary_instance = primary_model._default_manager.using(
-        using,
-    ).select_related(
-        *related_names,
-    ).get(pk=pk)
+    primary_instance = (
+        primary_model._default_manager.using(
+            using,
+        )
+        .select_related(
+            *related_names,
+        )
+        .get(pk=pk)
+    )
 
     instances = [
         primary_instance,
@@ -195,9 +198,11 @@ def delete_instance(model, *instance_or_pk):
     # but before the cache has cleared, that is better than leaving the cache
     # incorrect until the model is next updated.
 
-    transaction.on_commit(lambda: cache.delete_many(
-        [instance_key(model, x) for x in instance_or_pk],
-    ))
+    transaction.on_commit(
+        lambda: cache.delete_many(
+            [instance_key(model, x) for x in instance_or_pk],
+        )
+    )
 
 
 def instance_key(model, instance_or_pk):
@@ -205,9 +210,9 @@ def instance_key(model, instance_or_pk):
     Returns the cache key for this (model, instance) pair.
     """
 
-    return 'cache.%d:%s.%s:%s' % (
+    return "cache.%d:%s.%s:%s" % (
         CACHE_FORMAT_VERSION,
         model._meta.app_label,
         model._meta.model_name,
-        getattr(instance_or_pk, 'pk', instance_or_pk),
+        getattr(instance_or_pk, "pk", instance_or_pk),
     )

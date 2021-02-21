@@ -84,6 +84,7 @@ from django.contrib.auth.middleware import AuthenticationMiddleware
 
 from .model import cache_model
 
+
 class CacheBackedAuthenticationMiddleware(AuthenticationMiddleware):
     def __init__(self, get_response):
         super(CacheBackedAuthenticationMiddleware, self).__init__(get_response)
@@ -92,7 +93,9 @@ class CacheBackedAuthenticationMiddleware(AuthenticationMiddleware):
     def process_request(self, request):
         try:
             # Try and construct a User instance from data stored in the cache
-            request.user = get_user_model().get_cached(int(request.session[SESSION_KEY]))
+            request.user = get_user_model().get_cached(
+                int(request.session[SESSION_KEY])
+            )
         except Exception:
             # Fallback to constructing the User from the database.
             super(CacheBackedAuthenticationMiddleware, self).process_request(request)

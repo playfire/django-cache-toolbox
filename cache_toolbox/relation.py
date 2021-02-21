@@ -112,7 +112,8 @@ def cache_relation(descriptor, timeout=None, *, always_fetch=False):
             if instance is None:
                 # we (locally) cached that there is no model
                 raise descriptor.RelatedObjectDoesNotExist(
-                    "%s has no %s." % (
+                    "%s has no %s."
+                    % (
                         rel.model.__name__,
                         related_name,
                     ),
@@ -134,13 +135,15 @@ def cache_relation(descriptor, timeout=None, *, always_fetch=False):
         except rel.related_model.DoesNotExist:
             setattr(self, related_cache_name, None)
             raise descriptor.RelatedObjectDoesNotExist(
-                "%s has no %s." % (
+                "%s has no %s."
+                % (
                     rel.model.__name__,
                     related_name,
                 ),
             )
 
         return instance
+
     setattr(rel.model, related_name, get)
 
     # Clearing cache
@@ -155,8 +158,8 @@ def cache_relation(descriptor, timeout=None, *, always_fetch=False):
     def clear_cache(sender, instance, *args, **kwargs):
         delete_instance(rel.related_model, instance)
 
-    setattr(rel.model, '%s_clear' % related_name, clear)
-    setattr(rel.model, '%s_clear_pk' % related_name, clear_pk)
+    setattr(rel.model, "%s_clear" % related_name, clear)
+    setattr(rel.model, "%s_clear_pk" % related_name, clear_pk)
 
     post_save.connect(clear_cache, sender=rel.related_model, weak=False)
     post_delete.connect(clear_cache, sender=rel.related_model, weak=False)
