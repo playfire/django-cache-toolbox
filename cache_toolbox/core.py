@@ -111,7 +111,7 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
     # `cache_relation` makes.
     keys_to_models = {instance_key(model, instance_or_pk): model for model in models}
 
-    data_map = cache.get_many(keys_to_models.keys())
+    data_map = cache.get_many(tuple(keys_to_models.keys()))
     instance_map = {}
 
     if data_map:
@@ -122,7 +122,7 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
         except:
             # Error when deserialising - remove from the cache; we will
             # fallback and return the underlying instance
-            cache.delete_many(keys_to_models.keys())
+            cache.delete_many(tuple(keys_to_models.keys()))
 
         else:
             key = instance_key(primary_model, instance_or_pk)
