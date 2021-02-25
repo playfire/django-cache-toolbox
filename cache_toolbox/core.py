@@ -114,7 +114,7 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
     data_map = cache.get_many(tuple(keys_to_models.keys()))
     instance_map = {}
 
-    if data_map:
+    if data_map.keys() == keys_to_models.keys():
         try:
             for key, data in data_map.items():
                 model = keys_to_models[key]
@@ -129,12 +129,12 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
             primary_instance = instance_map[key]
 
             for descriptor in descriptors:
-                related_instance = instance_map.get(
+                related_instance = instance_map[
                     instance_key(
                         descriptor.related.field.model,
                         instance_or_pk,
                     )
-                )
+                ]
                 related_cache_name = get_related_cache_name(
                     get_related_name(descriptor),
                 )
