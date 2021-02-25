@@ -145,15 +145,11 @@ def get_instance(model, instance_or_pk, timeout=None, using=None):
     related_names = [d.related.field.related_query_name() for d in descriptors]
 
     # Use the default manager so we are never filtered by a .get_query_set()
-    primary_instance = (
-        primary_model._default_manager.using(
-            using,
-        )
-        .select_related(
-            *related_names,
-        )
-        .get(pk=pk)
-    )
+    queryset = primary_model._default_manager.using(using)
+    if related_names:
+        # NB: select_related without args selects all it can find, which we don't want.
+        queryset = queryset.select_related(*related_names)
+    primary_instance = queryset.get(pk=pk)
 
     instances = [
         primary_instance,
