@@ -79,19 +79,23 @@ choice for most environments but you may be happy with the trade-offs of the
 """
 
 from django.contrib.auth import SESSION_KEY
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth.middleware import AuthenticationMiddleware
 
 from .model import cache_model
 
+
 class CacheBackedAuthenticationMiddleware(AuthenticationMiddleware):
-    def __init__(self):
-        cache_model(User)
+    def __init__(self, get_response):
+        super(CacheBackedAuthenticationMiddleware, self).__init__(get_response)
+        cache_model(get_user_model())
 
     def process_request(self, request):
         try:
             # Try and construct a User instance from data stored in the cache
-            request.user = User.get_cached(request.session[SESSION_KEY])
-        except:
+            request.user = get_user_model().get_cached(
+                int(request.session[SESSION_KEY])
+            )
+        except Exception:
             # Fallback to constructing the User from the database.
             super(CacheBackedAuthenticationMiddleware, self).process_request(request)

@@ -22,16 +22,9 @@ Usage
 
         name = models.CharField(max_length=20)
 
-    cache_relation(User.foo, create=True, defaults={})
+    cache_relation(User.foo)
 
 (``primary_key`` being ``True`` is currently required.)
-
-With ``create=True`` we force the creation of an instance of `Foo` in case that
-we are trying to access to user.foo_cache but ``user.foo`` doesn't exist yet.
-
-If ``create=True`` we are going to pass the default to the get_or_create
-function.
-
 ::
 
     >>> user = User.objects.get(pk=1)
@@ -80,50 +73,93 @@ for regular ``ForeignKey`` fields is planned.
 
 from django.db.models.signals import post_save, post_delete
 
-from .core import get_instance, delete_instance
+from .core import (
+    get_instance,
+    delete_instance,
+    get_related_name,
+    get_related_cache_name,
+    add_always_fetch_relation,
+)
 
 
-def cache_relation(descriptor, timeout=None, create=False, defaults=None):
+def cache_relation(descriptor, timeout=None, *, always_fetch=False):
     rel = descriptor.related
-    related_name = '%s_cache' % rel.field.related_query_name()
+
+    if not rel.field.primary_key:
+        # This is an internal limitation due to the way that we construct our
+        # cache keys.
+        raise ValueError("Cached relations must be the primary key")
+
+    if always_fetch:
+        add_always_fetch_relation(descriptor)
+
+    related_name = get_related_name(descriptor)
 
     @property
     def get(self):
         # Always use the cached "real" instance if available
-        try:
-            return getattr(self, descriptor.cache_name)
-        except AttributeError:
-            pass
+        if descriptor.is_cached(self):
+            return descriptor.__get__(self)
 
         # Lookup cached instance
+        related_cache_name = get_related_cache_name(related_name)
         try:
-            return getattr(self, '_%s_cache' % related_name)
+            instance = getattr(self, related_cache_name)
         except AttributeError:
+            # no local cache
             pass
+        else:
+            if instance is None:
+                # we (locally) cached that there is no model
+                raise descriptor.RelatedObjectDoesNotExist(
+                    "%s has no %s."
+                    % (
+                        rel.model.__name__,
+                        related_name,
+                    ),
+                )
+            return instance
 
-        instance = get_instance(
-            rel.model, self.pk, timeout, create=create, defaults=defaults
-        )
-
-        setattr(self, '_%s_cache' % related_name, instance)
+        try:
+            instance = get_instance(
+                rel.field.model,
+                # Note that we're using _our_ primary key here, rather than the
+                # primary key of the model being cached. This is ok since we
+                # know that its primary key is a foreign key to this model
+                # instance and therefore has the same value.
+                self.pk,
+                timeout,
+                using=self._state.db,
+            )
+            setattr(self, related_cache_name, instance)
+        except rel.related_model.DoesNotExist:
+            setattr(self, related_cache_name, None)
+            raise descriptor.RelatedObjectDoesNotExist(
+                "%s has no %s."
+                % (
+                    rel.model.__name__,
+                    related_name,
+                ),
+            )
 
         return instance
-    setattr(rel.parent_model, related_name, get)
+
+    setattr(rel.model, related_name, get)
 
     # Clearing cache
 
     def clear(self):
-        delete_instance(rel.model, self)
+        delete_instance(rel.related_model, self)
 
     @classmethod
     def clear_pk(cls, *instances_or_pk):
-        delete_instance(rel.model, *instances_or_pk)
+        delete_instance(rel.related_model, *instances_or_pk)
 
     def clear_cache(sender, instance, *args, **kwargs):
-        delete_instance(rel.model, instance)
+        delete_instance(rel.related_model, instance)
 
-    setattr(rel.parent_model, '%s_clear' % related_name, clear)
-    setattr(rel.parent_model, '%s_clear_pk' % related_name, clear_pk)
+    setattr(rel.model, "%s_clear" % related_name, clear)
+    setattr(rel.model, "%s_clear_pk" % related_name, clear_pk)
 
-    post_save.connect(clear_cache, sender=rel.model, weak=False)
-    post_delete.connect(clear_cache, sender=rel.model, weak=False)
+    post_save.connect(clear_cache, sender=rel.related_model, weak=False)
+    post_delete.connect(clear_cache, sender=rel.related_model, weak=False)
